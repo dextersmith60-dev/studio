@@ -1,3 +1,52 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "track1",
+      "description": "A winding race track through a city.",
+      "imageUrl": "https://picsum.photos/seed/track1/600/400",
+      "imageHint": "race track"
+    },
+    {
+      "id": "track2",
+      "description": "A fast race track in the countryside.",
+      "imageUrl": "https://picsum.photos/seed/track2/600/400",
+      "imageHint": "race track"
+    },
+    {
+      "id": "track3",
+      "description": "A complex race track with many turns.",
+      "imageUrl": "https://picsum.photos/seed/track3/600/400",
+      "imageHint": "race track"
+    },
+    {
+      "id": "track4",
+      "description": "An oval speedway race track.",
+      "imageUrl": "https://picsum.photos/seed/track4/600/400",
+      "imageHint": "race track"
+    },
+    {
+      "id": "car1",
+      "description": "A red sports car.",
+      "imageUrl": "https://picsum.photos/seed/car1/600/400",
+      "imageHint": "sports car"
+    },
+    {
+      "id": "car2",
+      "description": "A blue sports car.",
+      "imageUrl": "https://picsum.photos/seed/car2/600/400",
+      "imageHint": "sports car"
+    },
+    {
+      "id": "car3",
+      "description": "A black sports car.",
+      "imageUrl": "https://picsum.photos/seed/car3/600/400",
+      "imageHint": "sports car"
+    },
+    {
+      "id": "car4",
+      "description": "A green sports car.",
+      "imageUrl": "https://picsum.photos/seed/car4/600/400",
+      "imageHint": "sports car"
+    }
+  ]
 }
