@@ -44,17 +44,17 @@ export default function CarSelection() {
               <div className="space-y-4 text-sm">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-muted-foreground">
-                    <span className="flex items-center gap-2"><Gauge className="w-4 h-4 text-accent" /> Speed</span>
+                    <span className="flex items-center gap-2"><Gauge className="w-4 h-4 text-red-400" /> Speed</span>
                     <span>{car.stats.speed}/100</span>
                   </div>
-                  <Progress value={car.stats.speed} className="h-2" indicatorClassName="bg-accent" />
+                  <Progress value={car.stats.speed} className="h-2" indicatorClassName="bg-red-400" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-muted-foreground">
-                    <span className="flex items-center gap-2"><Wind className="w-4 h-4 text-primary" /> Handling</span>
+                    <span className="flex items-center gap-2"><Wind className="w-4 h-4 text-accent" /> Handling</span>
                     <span>{car.stats.handling}/100</span>
                   </div>
-                  <Progress value={car.stats.handling} className="h-2" />
+                  <Progress value={car.stats.handling} className="h-2" indicatorClassName="bg-accent"/>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-muted-foreground">
