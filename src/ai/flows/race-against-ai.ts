@@ -15,9 +15,13 @@ import {z} from 'genkit';
 const RaceAgainstAIInputSchema = z.object({
   trackData: z.string().describe('Data representing the race track layout and characteristics.'),
   playerRacingStyle: z
-    .string()
+    .object({
+        speed: z.string().describe('The player\'s speed preference (e.g., "fast", "moderate", "cautious").'),
+        aggression: z.string().describe('The player\'s aggression level (e.g., "high", "medium", "low").'),
+        cornering: z.string().describe('The player\'s cornering technique (e.g., "late braking", "early apex", "wide entry").'),
+    })
     .describe(
-      'A description of the player’s racing style, including speed, aggression, and preferred racing lines.'
+      'A structured description of the player’s racing style.'
     ),
   difficultyLevel: z
     .enum(['easy', 'medium', 'hard'])
@@ -44,7 +48,10 @@ const raceAgainstAIPrompt = ai.definePrompt({
   prompt: `You are an expert race strategist. Given the following information about the race track, the player's racing style, and the desired difficulty level, generate racing strategies for the AI opponents.
 
 Track Data: {{{trackData}}}
-Player Racing Style: {{{playerRacingStyle}}}
+Player Racing Style:
+- Speed: {{{playerRacingStyle.speed}}}
+- Aggression: {{{playerRacingStyle.aggression}}}
+- Cornering: {{{playerRacingStyle.cornering}}}
 Difficulty Level: {{{difficultyLevel}}}
 
 Based on this information, create an array of racing strategies. Each strategy should include information like:

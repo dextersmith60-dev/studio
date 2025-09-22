@@ -7,11 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from "@/hooks/use-toast"
 import { generateTrackConditions } from '@/ai/flows/generate-track-conditions';
 import { raceAgainstAI } from '@/ai/flows/race-against-ai';
+import { analyzeRacingStyle, AnalyzeRacingStyleOutput } from '@/ai/flows/analyze-racing-style';
 import { cars } from '@/lib/data';
-import { Loader2, ArrowLeft, Wand2, Flag, Cloud, Wind } from 'lucide-react';
+import { Loader2, ArrowLeft, Wand2, Flag, Cloud, Wind, BrainCircuit } from 'lucide-react';
 
 const RACE_DURATION_SECONDS = 30; // 30 second race for demo
 
@@ -21,6 +23,10 @@ export default function RaceView() {
   const [raceProgress, setRaceProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isConditionsLoading, setIsConditionsLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [racingStyleDescription, setRacingStyleDescription] = useState("Aggressive and fast, brakes late into corners.");
+  const [analyzedStyle, setAnalyzedStyle] = useState<AnalyzeRacingStyleOutput | null>(null);
+
   const { toast } = useToast();
 
   const handleRandomizeConditions = async () => {
@@ -48,13 +54,41 @@ export default function RaceView() {
     }
   };
 
+  const handleAnalyzeStyle = async () => {
+    setIsAnalyzing(true);
+    try {
+      const style = await analyzeRacingStyle({ racingStyleDescription });
+      setAnalyzedStyle(style);
+      toast({
+        title: "Racing Style Analyzed!",
+        description: "The AI has adapted to your style. The race will be more challenging now.",
+      });
+    } catch (error) {
+      console.error('Failed to analyze racing style:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not analyze racing style.",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+  
   const handleStartRace = async () => {
-    if (!selectedTrack) return;
+    if (!selectedTrack || !analyzedStyle) {
+      toast({
+        variant: "destructive",
+        title: "Analyze First",
+        description: "Please analyze your racing style before starting the race.",
+      });
+      return;
+    };
     setRaceState('in-progress');
     try {
       const aiStrategies = await raceAgainstAI({
         trackData: selectedTrack.trackData,
-        playerRacingStyle: "Aggressive and fast, brakes late into corners.",
+        playerRacingStyle: analyzedStyle,
         difficultyLevel: selectedTrack.difficulty.toLowerCase() as 'easy' | 'medium' | 'hard',
       });
       console.log("AI Opponent Strategies:", aiStrategies);
@@ -116,6 +150,12 @@ export default function RaceView() {
     }
     return () => clearInterval(progressInterval);
   }, [raceState, endRace]);
+  
+   useEffect(() => {
+    // Analyze default style on mount
+    handleAnalyzeStyle();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!selectedTrack || !selectedCar) {
     return (
@@ -187,14 +227,27 @@ export default function RaceView() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Race Controls</CardTitle>
+              <CardTitle>AI & Race Controls</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+               <div className="space-y-2">
+                 <Textarea 
+                   value={racingStyleDescription}
+                   onChange={(e) => setRacingStyleDescription(e.target.value)}
+                   placeholder="Describe your racing style..."
+                   rows={3}
+                   disabled={raceState !== 'not-started'}
+                 />
+                 <Button onClick={handleAnalyzeStyle} className="w-full" variant="secondary" disabled={raceState !== 'not-started' || isAnalyzing}>
+                   {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                   Analyze Racing Style
+                 </Button>
+              </div>
               <Button onClick={handleRandomizeConditions} className="w-full" variant="outline" disabled={raceState !== 'not-started' || isConditionsLoading}>
                 {isConditionsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                 Randomize Conditions
               </Button>
-              <Button onClick={handleStartRace} className="w-full" size="lg" disabled={raceState !== 'not-started'}>
+              <Button onClick={handleStartRace} className="w-full" size="lg" disabled={raceState !== 'not-started' || !analyzedStyle}>
                 <Flag className="mr-2 h-4 w-4" /> Start Race
               </Button>
             </CardContent>
