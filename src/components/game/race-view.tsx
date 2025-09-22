@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useGame } from '@/hooks/use-game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,7 @@ import { generateTrackConditions } from '@/ai/flows/generate-track-conditions';
 import { raceAgainstAI } from '@/ai/flows/race-against-ai';
 import { analyzeRacingStyle, AnalyzeRacingStyleOutput } from '@/ai/flows/analyze-racing-style';
 import { cars } from '@/lib/data';
-import { Loader2, ArrowLeft, Wand2, Flag, Wind, BrainCircuit } from 'lucide-react';
+import { Loader2, ArrowLeft, Wand2, Flag, Wind, BrainCircuit, Gauge, Zap } from 'lucide-react';
 
 const RACE_DURATION_SECONDS = 30; // 30 second race for demo
 
@@ -149,7 +149,7 @@ export default function RaceView() {
             endRace();
             return 100;
           }
-          return prev + (100 / (RACE_DURATION_SECONDS * 100)); // ~1% per 100ms for 10s race
+          return prev + (100 / (RACE_DURATION_SECONDS * 100));
         });
       }, 10);
     }
@@ -174,62 +174,37 @@ export default function RaceView() {
   return (
     <section>
        <Button variant="ghost" onClick={backToTrackSelection} className="absolute -top-12 left-0 text-muted-foreground" disabled={raceState === 'in-progress'}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Car Selection
         </Button>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          <Card className="overflow-hidden">
-            <div className="relative h-72 w-full">
-              <Image src={selectedTrack.imageUrl} alt={selectedTrack.name} fill className="object-cover" data-ai-hint={selectedTrack.imageHint} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-              <div className="absolute bottom-6 left-6">
-                <h2 className="text-4xl font-bold text-white font-headline">{selectedTrack.name}</h2>
-                <p className="text-white/80">{selectedTrack.description}</p>
-              </div>
+      <div className="space-y-6">
+        <Card className="overflow-hidden relative">
+          <div className="relative h-[450px] w-full">
+            <Image src={selectedTrack.imageUrl} alt={selectedTrack.name} fill className="object-cover" data-ai-hint={selectedTrack.imageHint} />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20" />
+            <div className="absolute top-6 left-6">
+              <h2 className="text-4xl font-bold text-white font-headline">{selectedTrack.name}</h2>
+              <p className="text-white/80 max-w-lg">{selectedTrack.description}</p>
             </div>
-          </Card>
-           
-          {trackConditions && (
-            <Alert className="bg-card border-primary/50 fade-in">
-              <Wind className="h-4 w-4 text-primary" />
-              <AlertTitle className="text-primary">Track Conditions Update</AlertTitle>
-              <AlertDescription>
-                <p><strong className="text-foreground">Weather:</strong> {trackConditions.newWeather}</p>
-                <p><strong className="text-foreground">Obstacles:</strong> {trackConditions.trackObstacles}</p>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Race Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center font-mono text-5xl font-bold text-accent">
-                <span>{formatTime(currentTime)}</span>
-                <Flag className="h-12 w-12" />
+            <div className="absolute bottom-6 w-full px-6 space-y-4">
+              <div className="flex justify-between items-end">
+                <div className="text-white">
+                    <span className="text-sm text-white/80">Race Time</span>
+                    <p className="font-mono text-5xl font-bold">{formatTime(currentTime)}</p>
+                </div>
+                <div className="relative h-40 w-52 rounded-lg overflow-hidden border-2 border-primary/50 shadow-2xl shadow-primary/20">
+                    <Image src={selectedCar.imageUrl} alt={selectedCar.name} fill className="object-cover" data-ai-hint={selectedCar.imageHint} />
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                     <p className="absolute bottom-2 left-3 text-lg font-semibold text-white">{selectedCar.name}</p>
+                </div>
               </div>
               <div>
-                <span className="text-sm text-muted-foreground">Race Progress</span>
-                <Progress value={raceProgress} className="w-full h-4 mt-2" />
+                <Progress value={raceProgress} className="w-full h-4" indicatorClassName="bg-primary" />
               </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Car</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <div className="relative h-40 w-full rounded-lg overflow-hidden">
-                <Image src={selectedCar.imageUrl} alt={selectedCar.name} fill className="object-cover" data-ai-hint={selectedCar.imageHint} />
-              </div>
-              <p className="text-2xl font-semibold">{selectedCar.name}</p>
-            </CardContent>
-          </Card>
-
+            </div>
+          </div>
+        </Card>
+           
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader>
               <CardTitle>AI & Race Controls</CardTitle>
@@ -240,7 +215,7 @@ export default function RaceView() {
                    value={racingStyleDescription}
                    onChange={(e) => setRacingStyleDescription(e.target.value)}
                    placeholder="Describe your racing style..."
-                   rows={3}
+                   rows={2}
                    disabled={raceState !== 'not-started'}
                  />
                  <Button onClick={handleAnalyzeStyle} className="w-full" variant="secondary" disabled={raceState !== 'not-started' || isAnalyzing}>
@@ -257,6 +232,46 @@ export default function RaceView() {
               </Button>
             </CardContent>
           </Card>
+           <Card>
+              <CardHeader>
+                <CardTitle>Car Stats</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between text-muted-foreground">
+                      <span className="flex items-center gap-2"><Gauge className="w-4 h-4 text-red-400" /> Speed</span>
+                      <span>{selectedCar.stats.speed}/100</span>
+                    </div>
+                    <Progress value={selectedCar.stats.speed} className="h-2" indicatorClassName="bg-red-400" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-muted-foreground">
+                      <span className="flex items-center gap-2"><Wind className="w-4 h-4 text-accent" /> Handling</span>
+                      <span>{selectedCar.stats.handling}/100</span>
+                    </div>
+                    <Progress value={selectedCar.stats.handling} className="h-2" indicatorClassName="bg-accent"/>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-muted-foreground">
+                      <span className="flex items-center gap-2"><Zap className="w-4 h-4 text-yellow-400" /> Acceleration</span>
+                      <span>{selectedCar.stats.acceleration}/100</span>
+                    </div>
+                    <Progress value={selectedCar.stats.acceleration} className="h-2" indicatorClassName="bg-yellow-400" />
+                  </div>
+              </CardContent>
+            </Card>
+          
+          {trackConditions && (
+            <Alert className="bg-card border-primary/50 fade-in md:col-span-1">
+              <Wind className="h-4 w-4 text-primary" />
+              <AlertTitle className="text-primary">Track Conditions Update</AlertTitle>
+              <AlertDescription>
+                <p><strong className="text-foreground">Weather:</strong> {trackConditions.newWeather}</p>
+                <p><strong className="text-foreground">Obstacles:</strong> {trackConditions.trackObstacles}</p>
+              </AlertDescription>
+            </Alert>
+          )}
+
         </div>
       </div>
     </section>
