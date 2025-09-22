@@ -14,6 +14,7 @@ interface GameContextType {
   finishRace: (results: RaceResult[]) => void;
   setTrackConditions: (conditions: TrackConditions) => void;
   resetGame: () => void;
+  backToCarSelection: () => void;
   backToTrackSelection: () => void;
 }
 
@@ -53,6 +54,13 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     setRaceResults(null);
   }, []);
 
+  const backToCarSelection = useCallback(() => {
+    setSelectedCar(null);
+    setGameState('car-selection');
+    setTrackConditions(null);
+    setRaceResults(null);
+  }, []);
+  
   const backToTrackSelection = useCallback(() => {
     setSelectedTrack(null);
     setSelectedCar(null);
@@ -70,6 +78,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     finishRace,
     setTrackConditions: setTrackConditionsCb,
     resetGame,
+    backToCarSelection,
     backToTrackSelection,
   };
 
@@ -83,3 +92,5 @@ export const useGame = () => {
   }
   return context;
 };
+
+    

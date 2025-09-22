@@ -13,8 +13,8 @@ export default function CarSelection() {
 
   return (
     <section>
-      <div className="text-center mb-12">
-        <Button variant="ghost" onClick={backToTrackSelection} className="absolute left-0 top-0 text-muted-foreground">
+      <div className="text-center mb-12 relative">
+        <Button variant="ghost" onClick={backToTrackSelection} className="absolute left-0 top-1/2 -translate-y-1/2 text-muted-foreground">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Tracks
         </Button>
         <h2 className="text-4xl font-headline font-bold tracking-tight">Select Your Ride</h2>
@@ -44,10 +44,10 @@ export default function CarSelection() {
               <div className="space-y-4 text-sm">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-muted-foreground">
-                    <span className="flex items-center gap-2"><Gauge className="w-4 h-4 text-red-400" /> Speed</span>
+                    <span className="flex items-center gap-2"><Gauge className="w-4 h-4 text-primary" /> Speed</span>
                     <span>{car.stats.speed}/100</span>
                   </div>
-                  <Progress value={car.stats.speed} className="h-2" indicatorClassName="bg-red-400" />
+                  <Progress value={car.stats.speed} className="h-2" indicatorClassName="bg-primary" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-muted-foreground">
@@ -76,3 +76,5 @@ export default function CarSelection() {
     </section>
   );
 }
+
+    

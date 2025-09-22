@@ -13,12 +13,14 @@ import { generateTrackConditions } from '@/ai/flows/generate-track-conditions';
 import { raceAgainstAI } from '@/ai/flows/race-against-ai';
 import { analyzeRacingStyle, AnalyzeRacingStyleOutput } from '@/ai/flows/analyze-racing-style';
 import { cars } from '@/lib/data';
-import { Loader2, ArrowLeft, Wand2, Flag, Wind, BrainCircuit, Gauge, Zap } from 'lucide-react';
+import { Loader2, ArrowLeft, Wand2, Flag, Wind, BrainCircuit, Gauge, Zap, Sparkles } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const RACE_DURATION_SECONDS = 30; // 30 second race for demo
+const BOOSTS_PER_RACE = 3;
 
 export default function RaceView() {
-  const { selectedTrack, selectedCar, finishRace, backToTrackSelection, trackConditions, setTrackConditions } = useGame();
+  const { selectedTrack, selectedCar, finishRace, backToCarSelection, trackConditions, setTrackConditions } = useGame();
   const [raceState, setRaceState] = useState<'not-started' | 'in-progress' | 'finished'>('not-started');
   const [raceProgress, setRaceProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -26,24 +28,35 @@ export default function RaceView() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [racingStyleDescription, setRacingStyleDescription] = useState("Aggressive and fast, brakes late into corners.");
   const [analyzedStyle, setAnalyzedStyle] = useState<AnalyzeRacingStyleOutput | null>(null);
+  const [availableBoosts, setAvailableBoosts] = useState(BOOSTS_PER_RACE);
+  const [isBoosting, setIsBoosting] = useState(false);
+  const [raceLog, setRaceLog] = useState<string[]>([]);
+  const [aiStrategies, setAiStrategies] = useState<string[]>([]);
 
   const { toast } = useToast();
+  
+  const addLog = useCallback((log: string) => {
+    setRaceLog(prev => [log, ...prev]);
+  }, []);
 
   const handleRandomizeConditions = async () => {
     if (!selectedTrack) return;
     setIsConditionsLoading(true);
+    addLog('Generating new track conditions...');
     try {
       const conditions = await generateTrackConditions({
         trackName: selectedTrack.name,
         currentWeather: 'Sunny',
       });
       setTrackConditions(conditions);
+       addLog(`Weather changed to ${conditions.newWeather}. Watch out for ${conditions.trackObstacles}!`);
       toast({
         title: "Track Conditions Updated!",
         description: "New weather and obstacles have been generated.",
       });
     } catch (error) {
       console.error('Failed to generate track conditions:', error);
+      addLog('Error: Could not generate new track conditions.');
       toast({
         variant: "destructive",
         title: "Error",
@@ -56,15 +69,18 @@ export default function RaceView() {
 
   const handleAnalyzeStyle = async () => {
     setIsAnalyzing(true);
+    addLog("Analyzing your racing style...");
     try {
       const style = await analyzeRacingStyle({ racingStyleDescription });
       setAnalyzedStyle(style);
+      addLog("AI has adapted to your style.");
       toast({
         title: "Racing Style Analyzed!",
         description: "The AI has adapted to your style. The race will be more challenging now.",
       });
     } catch (error) {
       console.error('Failed to analyze racing style:', error);
+      addLog("Error: Could not analyze racing style.");
       toast({
         variant: "destructive",
         title: "Error",
@@ -85,20 +101,32 @@ export default function RaceView() {
       return;
     };
     setRaceState('in-progress');
+    addLog("Race started!");
     try {
-      const aiStrategies = await raceAgainstAI({
+      const strategies = await raceAgainstAI({
         trackData: selectedTrack.trackData,
         playerRacingStyle: analyzedStyle,
         difficultyLevel: selectedTrack.difficulty.toLowerCase() as 'easy' | 'medium' | 'hard',
       });
-      console.log("AI Opponent Strategies:", aiStrategies);
+      setAiStrategies(strategies.aiOpponentStrategies);
+      addLog("AI opponents are using adaptive strategies.");
     } catch(error) {
       console.error("Failed to get AI strategies", error);
+      addLog("Warning: Could not get AI strategies. AI will use default behavior.");
       toast({
         variant: "destructive",
         title: "Error",
         description: "Could not get AI strategies. Starting race with default strategies.",
       });
+    }
+  };
+
+  const handleUseBoost = () => {
+    if (availableBoosts > 0 && raceState === 'in-progress' && !isBoosting) {
+      setAvailableBoosts(prev => prev - 1);
+      setIsBoosting(true);
+      addLog("You used a boost!");
+      setTimeout(() => setIsBoosting(false), 2000); // Boost lasts for 2 seconds
     }
   };
 
@@ -113,6 +141,7 @@ export default function RaceView() {
     if (!selectedCar) return;
     setRaceState('finished');
     const finalTime = currentTime;
+    addLog(`Race finished! Your time: ${formatTime(finalTime)}`);
 
     const playerResult = { position: 0, name: 'You', time: formatTime(finalTime) };
     const otherCars = cars.filter(c => c.id !== selectedCar.id).slice(0, 3);
@@ -127,7 +156,7 @@ export default function RaceView() {
     ].sort((a,b) => a.time.localeCompare(b.time)).map((r, i) => ({...r, position: i + 1}));
     
     finishRace(results);
-  }, [currentTime, selectedCar, finishRace]);
+  }, [currentTime, selectedCar, finishRace, addLog]);
   
   useEffect(() => {
     let timerInterval: NodeJS.Timeout;
@@ -149,13 +178,26 @@ export default function RaceView() {
             endRace();
             return 100;
           }
-          return prev + (100 / (RACE_DURATION_SECONDS * 100));
+          const baseIncrement = (100 / (RACE_DURATION_SECONDS * 100));
+          const boostIncrement = isBoosting ? baseIncrement * 2.5 : 0; // 150% speed boost
+          return prev + baseIncrement + boostIncrement;
         });
       }, 10);
     }
     return () => clearInterval(progressInterval);
-  }, [raceState, endRace]);
+  }, [raceState, endRace, isBoosting]);
   
+  useEffect(() => {
+    if (raceState === 'in-progress' && aiStrategies.length > 0) {
+      const eventInterval = setInterval(() => {
+        const randomStrategy = aiStrategies[Math.floor(Math.random() * aiStrategies.length)];
+        const opponentName = cars[Math.floor(Math.random() * (cars.length -1)) + 1].name;
+        addLog(`AI (${opponentName}): ${randomStrategy.substring(0, 50)}...`);
+      }, 8000); // AI action every 8 seconds
+      return () => clearInterval(eventInterval);
+    }
+  }, [raceState, aiStrategies, addLog]);
+
    useEffect(() => {
     // Analyze default style on mount
     handleAnalyzeStyle();
@@ -198,18 +240,18 @@ export default function RaceView() {
                 </div>
               </div>
               <div>
-                <Progress value={raceProgress} className="w-full h-4" indicatorClassName="bg-primary" />
+                <Progress value={raceProgress} className="w-full h-4 transition-all" indicatorClassName={`bg-primary ${isBoosting ? 'animate-pulse' : ''}`} />
               </div>
             </div>
           </div>
         </Card>
            
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
+          <Card className="md:col-span-2">
             <CardHeader>
               <CardTitle>AI & Race Controls</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                <div className="space-y-2">
                  <Textarea 
                    value={racingStyleDescription}
@@ -222,47 +264,24 @@ export default function RaceView() {
                    {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
                    Analyze Racing Style
                  </Button>
+                 <Button onClick={handleRandomizeConditions} className="w-full" variant="outline" disabled={raceState !== 'not-started' || isConditionsLoading}>
+                    {isConditionsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                    Randomize Conditions
+                  </Button>
               </div>
-              <Button onClick={handleRandomizeConditions} className="w-full" variant="outline" disabled={raceState !== 'not-started' || isConditionsLoading}>
-                {isConditionsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                Randomize Conditions
-              </Button>
-              <Button onClick={handleStartRace} className="w-full" size="lg" disabled={raceState !== 'not-started' || !analyzedStyle}>
-                <Flag className="mr-2 h-4 w-4" /> Start Race
-              </Button>
+              <div className="space-y-4 flex flex-col">
+                <Button onClick={handleStartRace} className="w-full" size="lg" disabled={raceState !== 'not-started' || !analyzedStyle}>
+                  <Flag className="mr-2 h-4 w-4" /> Start Race
+                </Button>
+                 <Button onClick={handleUseBoost} className="w-full" size="lg" variant="destructive" disabled={raceState !== 'in-progress' || availableBoosts <= 0 || isBoosting}>
+                  <Sparkles className="mr-2 h-4 w-4" /> Boost ({availableBoosts} left)
+                </Button>
+              </div>
             </CardContent>
           </Card>
-           <Card>
-              <CardHeader>
-                <CardTitle>Car Stats</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between text-muted-foreground">
-                      <span className="flex items-center gap-2"><Gauge className="w-4 h-4 text-red-400" /> Speed</span>
-                      <span>{selectedCar.stats.speed}/100</span>
-                    </div>
-                    <Progress value={selectedCar.stats.speed} className="h-2" indicatorClassName="bg-red-400" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-muted-foreground">
-                      <span className="flex items-center gap-2"><Wind className="w-4 h-4 text-accent" /> Handling</span>
-                      <span>{selectedCar.stats.handling}/100</span>
-                    </div>
-                    <Progress value={selectedCar.stats.handling} className="h-2" indicatorClassName="bg-accent"/>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-muted-foreground">
-                      <span className="flex items-center gap-2"><Zap className="w-4 h-4 text-yellow-400" /> Acceleration</span>
-                      <span>{selectedCar.stats.acceleration}/100</span>
-                    </div>
-                    <Progress value={selectedCar.stats.acceleration} className="h-2" indicatorClassName="bg-yellow-400" />
-                  </div>
-              </CardContent>
-            </Card>
-          
+           
           {trackConditions && (
-            <Alert className="bg-card border-primary/50 fade-in md:col-span-1">
+            <Alert className="bg-card border-primary/50 fade-in">
               <Wind className="h-4 w-4 text-primary" />
               <AlertTitle className="text-primary">Track Conditions Update</AlertTitle>
               <AlertDescription>
@@ -272,8 +291,23 @@ export default function RaceView() {
             </Alert>
           )}
 
+          <Card className="md:col-span-3">
+             <CardHeader>
+                <CardTitle>Race Log</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-40 w-full rounded-md border p-4 font-mono text-sm">
+                  {raceLog.map((log, i) => (
+                    <div key={i} className="mb-2 last:mb-0">{log}</div>
+                  ))}
+                </ScrollArea>
+              </CardContent>
+          </Card>
+
         </div>
       </div>
     </section>
   );
 }
+
+    
