@@ -13,7 +13,7 @@ import { generateTrackConditions } from '@/ai/flows/generate-track-conditions';
 import { raceAgainstAI } from '@/ai/flows/race-against-ai';
 import { analyzeRacingStyle, AnalyzeRacingStyleOutput } from '@/ai/flows/analyze-racing-style';
 import { cars } from '@/lib/data';
-import { Loader2, ArrowLeft, Wand2, Flag, Cloud, Wind, BrainCircuit } from 'lucide-react';
+import { Loader2, ArrowLeft, Wand2, Flag, Wind, BrainCircuit } from 'lucide-react';
 
 const RACE_DURATION_SECONDS = 30; // 30 second race for demo
 
@@ -93,7 +93,12 @@ export default function RaceView() {
       });
       console.log("AI Opponent Strategies:", aiStrategies);
     } catch(error) {
-      console.error("Failed to get AI strategies", error)
+      console.error("Failed to get AI strategies", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not get AI strategies. Starting race with default strategies.",
+      });
     }
   };
 

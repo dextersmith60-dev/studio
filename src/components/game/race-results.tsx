@@ -13,7 +13,7 @@ export default function RaceResults() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
-  const playerResult = raceResults?.find(r => r.name === "You" || r.name === selectedCar?.name);
+  const playerResult = raceResults?.find(r => r.name === "You");
   const playerWon = playerResult?.position === 1;
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function RaceResults() {
               </TableHeader>
               <TableBody>
                 {raceResults.map((result) => (
-                  <TableRow key={result.position} className={result.name === "You" || result.name === selectedCar?.name ? 'bg-primary/10' : ''}>
+                  <TableRow key={result.position} className={result.name === "You" ? 'bg-primary/10' : ''}>
                     <TableCell className="font-bold text-2xl text-center">{result.position}</TableCell>
                     <TableCell className="font-medium">{result.name}</TableCell>
                     <TableCell className="text-right font-mono">{result.time}</TableCell>
